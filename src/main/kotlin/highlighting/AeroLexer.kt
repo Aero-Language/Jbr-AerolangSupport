@@ -5,331 +5,239 @@ import com.intellij.psi.tree.IElementType
 
 class AeroLexer : LexerBase() {
 
-    private lateinit var buffer: CharSequence
-
-    private var startOffset = 0
+    private var buffer: CharSequence = ""
     private var endOffset = 0
-
     private var currentOffset = 0
-
     private var tokenStart = 0
     private var tokenEnd = 0
-
     private var tokenType: IElementType? = null
 
-    override fun start(
-        buffer: CharSequence,
-        startOffset: Int,
-        endOffset: Int,
-        initialState: Int
-    ) {
+    // 0 normal, 1 inside the text of a $"..." string, 2 inside a {expression} of one
+    private var mode = 0
+    private var depth = 0
+
+    // Longest first so "<<=" wins over "<<" and "<"
+    private val operators = listOf(
+        "<<=", ">>=",
+        "==", "!=", "<=", ">=", "&&", "||", "^^", "++", "--", "+=", "-=", "*=", "/=", "%=",
+        "&=", "|=", "^=", "->", "=>", "<<", ">>", "::", "..",
+        "+", "-", "*", "/", "%", "=", "<", ">", "!", "&", "|", "^", "~", "?"
+    )
+
+    override fun start(buffer: CharSequence, startOffset: Int, endOffset: Int, initialState: Int) {
         this.buffer = buffer
-        this.startOffset = startOffset
         this.endOffset = endOffset
-
         currentOffset = startOffset
-
+        mode = if (initialState == 0) 0 else if (initialState == 1) 1 else 2
+        depth = if (initialState >= 2) initialState - 2 else 0
         advance()
     }
 
-    override fun getState() = 0
-
+    override fun getState() = when (mode) { 0 -> 0; 1 -> 1; else -> 2 + depth }
     override fun getTokenType() = tokenType
-
     override fun getTokenStart() = tokenStart
-
     override fun getTokenEnd() = tokenEnd
-
     override fun getBufferSequence() = buffer
-
     override fun getBufferEnd() = endOffset
-
-    // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
 
     private fun peek(offset: Int = 0): Char? {
         val index = currentOffset + offset
         return if (index >= endOffset) null else buffer[index]
     }
 
-    private fun advanceChar() {
+    private fun next() {
         currentOffset++
     }
 
     private fun match(text: String): Boolean {
-
-        if (currentOffset + text.length > endOffset)
-            return false
-
-        for (i in text.indices) {
-            if (buffer[currentOffset + i] != text[i])
-                return false
-        }
-
+        if (currentOffset + text.length > endOffset) return false
+        for (i in text.indices) if (buffer[currentOffset + i] != text[i]) return false
         currentOffset += text.length
         return true
     }
 
-    private fun skipWhitespace() {
-
-        while (peek()?.isWhitespace() == true)
-            advanceChar()
-
-        tokenType = AeroTokenTypes.WHITE_SPACE
-    }
-
     private fun single(type: IElementType) {
-        advanceChar()
+        next()
         tokenType = type
     }
 
-    private fun operator(
-        twoChar: String,
-        twoToken: IElementType,
-        oneToken: IElementType
-    ) {
-        if (match(twoChar))
-            tokenType = twoToken
-        else
-            single(oneToken)
+    private fun readWhitespace() {
+        while (peek()?.isWhitespace() == true) next()
+        tokenType = AeroTokenTypes.WHITE_SPACE
     }
 
-    // ------------------------------------------------------------
-    // Comments
-    // ------------------------------------------------------------
-
-    private fun readSlash() {
-
+    private fun readComment(): Boolean {
         if (match("//")) {
-
-            while (peek() != null && peek() != '\n')
-                advanceChar()
-
+            while (peek() != null && peek() != '\n') next()
             tokenType = AeroTokenTypes.COMMENT
-            return
+            return true
         }
-
         if (match("/*")) {
-
-            while (peek() != null) {
-
-                if (match("*/"))
-                    break
-
-                advanceChar()
-            }
-
+            while (peek() != null && !match("*/")) next()
             tokenType = AeroTokenTypes.COMMENT
-            return
+            return true
         }
-
-        if (match("/=")) {
-            tokenType = AeroTokenTypes.SLASH_ASSIGN
-            return
-        }
-
-        advanceChar()
-        tokenType = AeroTokenTypes.SLASH
+        return false
     }
-
-
-    // ------------------------------------------------------------
-    // Strings
-    // ------------------------------------------------------------
 
     private fun readString(quote: Char) {
+        if (quote == '"' && match("\"\"\"")) {
+            while (peek() != null && !match("\"\"\"")) next()
+            tokenType = AeroTokenTypes.STRING
+            return
+        }
 
-        advanceChar()
-
-        while (peek() != null) {
-
-            val c = peek()!!
-
+        next() // opening quote
+        while (true) {
+            val c = peek() ?: break
+            if (c == '\n') break // unterminated, don't swallow the rest of the file
             if (c == '\\') {
-                advanceChar()
-                if (peek() != null)
-                    advanceChar()
+                next()
+                if (peek() != null && peek() != '\n') next()
                 continue
             }
-
-            if (c == quote) {
-                advanceChar()
-                break
-            }
-
-            advanceChar()
+            next()
+            if (c == quote) break
         }
-
-        tokenType = AeroTokenTypes.STRING
+        tokenType = if (quote == '\'') AeroTokenTypes.CHARACTER else AeroTokenTypes.STRING
     }
-
-    // ------------------------------------------------------------
-    // Numbers
-    // ------------------------------------------------------------
 
     private fun readNumber() {
-
-        while (peek()?.isDigit() == true || peek() == '_')
-            advanceChar()
-
-        var isFloat = false
-
-        if (peek() == '.' && peek(1)?.isDigit() == true) {
-
-            isFloat = true
-
-            advanceChar()
-
-            while (peek()?.isDigit() == true || peek() == '_')
-                advanceChar()
+        val p1 = peek(1)
+        if (peek() == '0' && (p1 == 'x' || p1 == 'X')) {
+            next(); next()
+            while (peek()?.let { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' || it == '_' } == true) next()
+            tokenType = AeroTokenTypes.INTEGER
+            return
+        }
+        if (peek() == '0' && (p1 == 'b' || p1 == 'B')) {
+            next(); next()
+            while (peek() == '0' || peek() == '1' || peek() == '_') next()
+            tokenType = AeroTokenTypes.INTEGER
+            return
         }
 
-        tokenType =
-            if (isFloat)
-                AeroTokenTypes.FLOAT
-            else
-                AeroTokenTypes.INTEGER
+        while (peek()?.isDigit() == true || peek() == '_') next()
+
+        var isFloat = false
+        if (peek() == '.' && peek(1)?.isDigit() == true) {
+            isFloat = true
+            next()
+            while (peek()?.isDigit() == true || peek() == '_') next()
+        }
+        tokenType = if (isFloat) AeroTokenTypes.FLOAT else AeroTokenTypes.INTEGER
     }
 
-    // ------------------------------------------------------------
-    // Identifiers
-    // ------------------------------------------------------------
+    private fun readInterpolatedText(c: Char) {
+        when (c) {
+            '"' -> { next(); mode = 0; tokenType = AeroTokenTypes.STRING }
+            '{' -> { next(); mode = 2; depth = 0; tokenType = AeroTokenTypes.LBRACE }
+            else -> {
+                while (true) {
+                    val ch = peek() ?: break
+                    if (ch == '"' || ch == '{' || ch == '\n') break
+                    next()
+                    if (ch == '\\' && peek() != null && peek() != '\n') next()
+                }
+                tokenType = AeroTokenTypes.STRING
+            }
+        }
+    }
 
     private fun readAnnotation() {
-
-        advanceChar() // consume '@'
-
-        if (peek() == null || (!peek()!!.isLetter() && peek() != '_')) {
+        next() // '@'
+        val c = peek()
+        if (c == null || (!c.isLetter() && c != '_')) {
             tokenType = AeroTokenTypes.BAD_CHARACTER
             return
         }
-
-        while (peek() != null &&
-            (peek()!!.isLetterOrDigit() || peek() == '_')) {
-            advanceChar()
-        }
-
+        while (peek()?.let { it.isLetterOrDigit() || it == '_' } == true) next()
         tokenType = AeroTokenTypes.ANNOTATION
     }
 
     private fun readIdentifier() {
-
-        while (true) {
-
-            val c = peek() ?: break
-
-            if (!c.isLetterOrDigit() && c != '_')
-                break
-
-            advanceChar()
-        }
+        while (peek()?.let { it.isLetterOrDigit() || it == '_' } == true) next()
 
         val text = buffer.subSequence(tokenStart, currentOffset).toString()
-
-        if (AeroTokenTypes.KEYWORDS.contains(text)) {
-
+        if (text in AeroTokenTypes.KEYWORDS) {
             tokenType = AeroTokenTypes.KEYWORD
             return
         }
-
-        var lookahead = currentOffset
-
-        while (
-            lookahead < endOffset &&
-            buffer[lookahead].isWhitespace()
-        ) {
-            lookahead++
+        if (text in AeroTokenTypes.BUILTIN_TYPES) {
+            tokenType = AeroTokenTypes.TYPE
+            return
         }
 
-        tokenType =
-            if (lookahead < endOffset && buffer[lookahead] == '(')
-                AeroTokenTypes.FUNCTION
-            else
-                AeroTokenTypes.IDENTIFIER
+        // Followed by '(' (ignoring whitespace) means a call or declaration name
+        var look = currentOffset
+        while (look < endOffset && buffer[look].isWhitespace()) look++
+        tokenType = if (look < endOffset && buffer[look] == '(') AeroTokenTypes.FUNCTION else AeroTokenTypes.IDENTIFIER
     }
 
-    // ------------------------------------------------------------
-    // Lexer
-    // ------------------------------------------------------------
+    private fun readOperator(): Boolean {
+        for (op in operators) {
+            if (match(op)) {
+                tokenType = AeroTokenTypes.OPERATOR
+                return true
+            }
+        }
+        return false
+    }
 
     override fun advance() {
-
         if (currentOffset >= endOffset) {
-
             tokenType = null
             tokenStart = endOffset
             tokenEnd = endOffset
-
             return
         }
 
         tokenStart = currentOffset
+        val c = peek()!!
 
-        when (val c = peek()!!) {
-
-            // whitespace
-
-            ' ', '\t', '\n', '\r' ->
-                skipWhitespace()
-
-            // comments
-
-            '/' ->
-                readSlash()
-
-            // strings
-
-            '"' ->
-                readString('"')
-
-            '\'' ->
-                readString('\'')
-
-            // numbers
-
-            in '0'..'9' ->
-                readNumber()
-
-            // identifiers
-
-            in 'a'..'z',
-            in 'A'..'Z',
-            '_' -> readIdentifier()
-            '@' -> readAnnotation()
-
-            // punctuation
-
-            '(' -> single(AeroTokenTypes.LPAREN)
-            ')' -> single(AeroTokenTypes.RPAREN)
-            '{' -> single(AeroTokenTypes.LBRACE)
-            '}' -> single(AeroTokenTypes.RBRACE)
-            '[' -> single(AeroTokenTypes.LBRACKET)
-            ']' -> single(AeroTokenTypes.RBRACKET)
-            '.' -> single(AeroTokenTypes.DOT)
-            ',' -> single(AeroTokenTypes.COMMA)
-            ';' -> single(AeroTokenTypes.SEMICOLON)
-            ':' -> operator("::", AeroTokenTypes.DOUBLE_COLON, AeroTokenTypes.COLON)
-            '+' -> operator("+=", AeroTokenTypes.PLUS_ASSIGN, AeroTokenTypes.PLUS)
-            '*' -> operator("*=", AeroTokenTypes.STAR_ASSIGN, AeroTokenTypes.STAR)
-            '%' -> operator("%=", AeroTokenTypes.PERCENT_ASSIGN, AeroTokenTypes.PERCENT)
-            '=' -> operator("==", AeroTokenTypes.EQ, AeroTokenTypes.ASSIGN)
-            '!' -> operator("!=", AeroTokenTypes.NEQ, AeroTokenTypes.NOT)
-            '<' -> operator("<=", AeroTokenTypes.LTE, AeroTokenTypes.LT)
-            '>' -> operator(">=", AeroTokenTypes.GTE, AeroTokenTypes.GT)
-
-            '-' -> {
-                if (match("->")) tokenType = AeroTokenTypes.ARROW
-                else if (match("-=")) tokenType = AeroTokenTypes.MINUS_ASSIGN
-                else {
-                    advanceChar()
-                    tokenType = AeroTokenTypes.MINUS
-                }
+        if (mode == 1) {
+            if (c == '\n') mode = 0 // unterminated, fall back to normal lexing
+            else {
+                readInterpolatedText(c)
+                tokenEnd = currentOffset
+                return
             }
+        }
 
-            else -> {
-                advanceChar()
-                tokenType = AeroTokenTypes.BAD_CHARACTER
+        when {
+            c.isWhitespace() -> {
+                readWhitespace()
+                if (mode != 0 && buffer.subSequence(tokenStart, currentOffset).contains('\n')) mode = 0
+            }
+            c == '/' -> if (!readComment() && !readOperator()) single(AeroTokenTypes.BAD_CHARACTER)
+            c == '"' || c == '\'' -> readString(c)
+            c == '$' && peek(1) == '"' -> {
+                next(); next()
+                mode = 1
+                tokenType = AeroTokenTypes.STRING
+            }
+            c.isDigit() -> readNumber()
+            c.isLetter() || c == '_' -> readIdentifier()
+            c == '@' -> readAnnotation()
+            c == '.' && peek(1) == '.' -> readOperator()
+            else -> when (c) {
+                '(' -> single(AeroTokenTypes.LPAREN)
+                ')' -> single(AeroTokenTypes.RPAREN)
+                '{' -> {
+                    if (mode == 2) depth++
+                    single(AeroTokenTypes.LBRACE)
+                }
+                '}' -> {
+                    if (mode == 2) { if (depth == 0) mode = 1 else depth-- }
+                    single(AeroTokenTypes.RBRACE)
+                }
+                '[' -> single(AeroTokenTypes.LBRACKET)
+                ']' -> single(AeroTokenTypes.RBRACKET)
+                '.' -> single(AeroTokenTypes.DOT)
+                ',' -> single(AeroTokenTypes.COMMA)
+                ';' -> single(AeroTokenTypes.SEMICOLON)
+                ':' -> if (!readOperator()) single(AeroTokenTypes.COLON) // "::" is an operator
+                else -> if (!readOperator()) single(AeroTokenTypes.BAD_CHARACTER)
             }
         }
 

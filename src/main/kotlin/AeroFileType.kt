@@ -1,20 +1,17 @@
 package com.aerolang.aerolangsupport
 
-import com.intellij.openapi.fileTypes.FileType
-import com.intellij.openapi.util.NlsContexts
-import com.intellij.openapi.util.NlsSafe
-import com.intellij.ui.JBColor
-import org.jetbrains.annotations.NonNls
+import com.intellij.openapi.fileTypes.LanguageFileType
 import javax.swing.Icon
 
-class AeroFileType : FileType {
-    override fun getDefaultExtension(): @NlsSafe String { return "aero" }
-    override fun getDescription(): @NlsContexts.Label String { return "Aero is a compiled and strictly typed programming language, built for performance and ease of use." }
-    override fun getName(): @NonNls String { return "Aero File" }
-    override fun isBinary(): Boolean { return false }
-    override fun getIcon(): Icon { return AeroIcons.small }
+class AeroFileType private constructor() : LanguageFileType(AeroLanguage.Instance) {
+    override fun getName(): String = "Aero File"
+    override fun getDescription(): String = "Aero is a compiled and strictly typed programming language, built for performance and ease of use."
+    override fun getDefaultExtension(): String = "aero"
+    override fun getIcon(): Icon = AeroIcons.small
 
-    companion object{
+    companion object {
+        // @JvmField so plugin.xml's fieldName="Instance" finds a public static field
+        @JvmField
         val Instance: AeroFileType = AeroFileType()
     }
 }
