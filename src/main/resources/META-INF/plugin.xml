@@ -1,0 +1,44 @@
+<!-- Plugin Configuration File. -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.aerolang.aerolangsupport</id>
+
+    <!-- Public plugin name should be written in Title Case. -->
+    <name>Aero Language</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://aero-language.github.io/Aero-Docs/">Aero Language</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager. -->
+    <description><![CDATA[
+        The official Aero Language support for all JetBrains IDE's.
+        ]]></description>
+
+    <!-- Product and plugin compatibility requirements. -->
+    <depends>com.intellij.modules.lsp</depends>
+
+    <!-- Extensions defined by the plugin. -->
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Aero File"
+                  implementationClass="com.aerolang.aerolangsupport.AeroFileType"
+                  fieldName="Instance"
+                  extensions="aero" />
+        <platform.lsp.serverSupportProvider
+                implementation="com.aerolang.aerolangsupport.AeroLspServerSupportProvider" />
+        <lang.syntaxHighlighterFactory
+                language="Aero"
+                implementationClass="com.aerolang.aerolangsupport.highlighting.AeroSyntaxHighlighterFactory" />
+
+    </extensions>
+
+    <actions>
+        <action id="Aero.NewFile"
+                class="com.aerolang.aerolangsupport.actions.CreateAeroFileAction"
+                text="Aero File"
+                description="Create a new Aero file">
+            <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFile"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt A"/>
+        </action>
+    </actions>
+
+</idea-plugin>
