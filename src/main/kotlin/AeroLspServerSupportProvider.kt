@@ -1,16 +1,15 @@
 package com.aerolang.aerolangsupport
 
+import com.aerolang.aerolangsupport.highlighting.AeroSemanticColors
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.openapi.extensions.ExtensionDescriptor
+import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.toNioPathOrNull
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.lsp.api.LspServerDescriptor
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
-import okio.Path.Companion.toPath
-import java.io.FileNotFoundException
+import com.intellij.platform.lsp.api.customization.LspCustomization
+import com.intellij.platform.lsp.api.customization.LspSemanticTokensSupport
 
 class AeroLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(
@@ -40,5 +39,11 @@ class AeroLspServerDescriptor(project: Project) : ProjectWideLspServerDescriptor
         }
     }
 
-
+    // Colors the type and variable tokens the server sends; tokens without a key keep the lexer's colors
+    override val lspCustomization: LspCustomization = object : LspCustomization() {
+        override val semanticTokensCustomizer = object : LspSemanticTokensSupport() {
+            override fun getTextAttributesKey(tokenType: String, modifiers: List<String>): TextAttributesKey? =
+                AeroSemanticColors.keyFor(tokenType)
+        }
+    }
 }

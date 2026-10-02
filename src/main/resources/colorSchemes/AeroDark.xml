@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list>
+  <option name="AERO_CLASS">
+    <value>
+      <option name="FOREGROUND" value="4ec9b0"/>
+    </value>
+  </option>
+  <option name="AERO_STRUCT">
+    <value>
+      <option name="FOREGROUND" value="9ece6a"/>
+    </value>
+  </option>
+  <option name="AERO_RECORD">
+    <value>
+      <option name="FOREGROUND" value="ff9e64"/>
+    </value>
+  </option>
+  <option name="AERO_TRAIT">
+    <value>
+      <option name="FOREGROUND" value="bb9af7"/>
+    </value>
+  </option>
+  <option name="AERO_ENUM">
+    <value>
+      <option name="FOREGROUND" value="e0af68"/>
+    </value>
+  </option>
+  <option name="AERO_ENUM_MEMBER">
+    <value>
+      <option name="FOREGROUND" value="73daca"/>
+    </value>
+  </option>
+  <option name="AERO_TYPE_PARAMETER">
+    <value>
+      <option name="FOREGROUND" value="f7768e"/>
+    </value>
+  </option>
+  <option name="AERO_PROPERTY">
+    <value>
+      <option name="FOREGROUND" value="61afef"/>
+    </value>
+  </option>
+  <option name="AERO_FIELD">
+    <value>
+      <option name="FOREGROUND" value="7dcfff"/>
+    </value>
+  </option>
+  <option name="AERO_CONSTANT">
+    <value>
+      <option name="FOREGROUND" value="ff79c6"/>
+    </value>
+  </option>
+  <option name="AERO_LOCAL">
+    <value>
+      <option name="FOREGROUND" value="98c379"/>
+    </value>
+  </option>
+  <option name="AERO_PARAMETER">
+    <value>
+      <option name="FOREGROUND" value="e8d5a3"/>
+    </value>
+  </option>
+</list>

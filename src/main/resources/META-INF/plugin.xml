@@ -28,7 +28,20 @@
         <lang.syntaxHighlighterFactory
                 language="Aero"
                 implementationClass="com.aerolang.aerolangsupport.highlighting.AeroSyntaxHighlighterFactory" />
-
+        <lang.braceMatcher
+                language="Aero"
+                implementationClass="com.aerolang.aerolangsupport.editing.AeroBraceMatcher" />
+        <quoteHandler
+                fileType="Aero File"
+                className="com.aerolang.aerolangsupport.editing.AeroQuoteHandler" />
+        <enterHandlerDelegate
+                implementation="com.aerolang.aerolangsupport.editing.AeroEnterHandler" />
+        <typedHandler
+                implementation="com.aerolang.aerolangsupport.editing.AeroTypedHandler" />
+        <colorSettingsPage
+                implementation="com.aerolang.aerolangsupport.highlighting.AeroColorSettingsPage" />
+        <additionalTextAttributes scheme="Default" file="colorSchemes/AeroLight.xml" />
+        <additionalTextAttributes scheme="Darcula" file="colorSchemes/AeroDark.xml" />
     </extensions>
 
     <actions>
