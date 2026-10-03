@@ -13,14 +13,8 @@ class AeroBraceMatcher : PairedBraceMatcher {
         BracePair(AeroTokenTypes.LBRACKET, AeroTokenTypes.RBRACKET, false)
     )
 
-    // Only close a pair when what follows can't be the start of something it would wrap
-    override fun isPairedBracesAllowedBeforeType(lbraceType: IElementType, contextType: IElementType?): Boolean =
-        contextType == null || when (contextType) {
-            AeroTokenTypes.WHITE_SPACE, AeroTokenTypes.COMMENT,
-            AeroTokenTypes.RPAREN, AeroTokenTypes.RBRACE, AeroTokenTypes.RBRACKET,
-            AeroTokenTypes.COMMA, AeroTokenTypes.SEMICOLON -> true
-            else -> false
-        }
+    // Always close; the platform itself skips it when an unmatched closer of the same type follows
+    override fun isPairedBracesAllowedBeforeType(lbraceType: IElementType, contextType: IElementType?): Boolean = true
 
     override fun getCodeConstructStart(file: PsiFile?, openingBraceOffset: Int): Int = openingBraceOffset
 }

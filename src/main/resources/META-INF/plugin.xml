@@ -38,6 +38,8 @@
                 implementation="com.aerolang.aerolangsupport.editing.AeroEnterHandler" />
         <typedHandler
                 implementation="com.aerolang.aerolangsupport.editing.AeroTypedHandler" />
+        <lineIndentProvider
+                implementation="com.aerolang.aerolangsupport.editing.AeroLineIndentProvider" />
         <colorSettingsPage
                 implementation="com.aerolang.aerolangsupport.highlighting.AeroColorSettingsPage" />
         <additionalTextAttributes scheme="Default" file="colorSchemes/AeroLight.xml" />
