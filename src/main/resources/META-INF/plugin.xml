@@ -4,7 +4,10 @@
     <id>com.aerolang.aerolangsupport</id>
 
     <!-- Public plugin name should be written in Title Case. -->
-    <name>Aero Language</name>
+    <name>Aero</name>
+
+    <!-- Version identifier of the plugin -->
+    <version>0.1.1</version>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor url="https://aero-language.github.io/Aero-Docs/">Aero Language</vendor>
