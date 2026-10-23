@@ -37,6 +37,12 @@
         <lang.braceMatcher
                 language="Aero"
                 implementationClass="com.aerolang.aerolangsupport.editing.AeroBraceMatcher" />
+        <lang.commenter
+                language="Aero"
+                implementationClass="com.aerolang.aerolangsupport.editing.AeroCommenter" />
+        <lang.foldingBuilder
+                language="Aero"
+                implementationClass="com.aerolang.aerolangsupport.editing.AeroFoldingBuilder" />
         <quoteHandler
                 fileType="Aero File"
                 className="com.aerolang.aerolangsupport.editing.AeroQuoteHandler" />
