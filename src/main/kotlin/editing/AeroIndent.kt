@@ -41,6 +41,15 @@ object AeroIndent {
         val stack = ArrayList<Opener>()
         var lastLineIndent = ""
         var lastWasOpener = false
+        var lastType: IElementType? = null
+
+        // Last token was `=>` or `else`: the next line is the single statement body
+        var pendingBase: String? = null
+        var pendingLine = -1
+        // Inside such a body: after it ends the next line goes back to the base
+        var bodyBase: String? = null
+        var bodyLine = -1
+        var bodyDepth = 0
 
         while (true) {
             val type = lexer.tokenType ?: break
@@ -48,6 +57,17 @@ object AeroIndent {
                 val tokenLine = doc.getLineNumber(lexer.tokenStart)
                 val tokenLineStart = doc.getLineStartOffset(tokenLine)
                 val lineIndent = text.subSequence(tokenLineStart, blanksEnd(text, tokenLineStart, doc.getLineEndOffset(tokenLine))).toString()
+
+                if (pendingBase != null) {
+                    if (tokenLine > pendingLine) {
+                        bodyBase = pendingBase
+                        bodyLine = tokenLine
+                        bodyDepth = stack.size
+                    }
+                    pendingBase = null
+                } else if (bodyBase != null && tokenLine > bodyLine && stack.size == bodyDepth) {
+                    bodyBase = null
+                }
 
                 lastWasOpener = false
                 when (type) {
@@ -58,6 +78,15 @@ object AeroIndent {
                     AeroTokenTypes.RBRACE, AeroTokenTypes.RPAREN, AeroTokenTypes.RBRACKET ->
                         if (stack.isNotEmpty()) stack.removeAt(stack.size - 1)
                 }
+                if (bodyBase != null && stack.size < bodyDepth) bodyBase = null
+
+                val tokenText = text.subSequence(lexer.tokenStart, lexer.tokenEnd)
+                if ((type == AeroTokenTypes.OPERATOR && tokenText == "=>") || (type == AeroTokenTypes.KEYWORD && tokenText == "else")) {
+                    pendingBase = lineIndent
+                    pendingLine = tokenLine
+                }
+
+                lastType = type
                 lastLineIndent = lineIndent
             }
             lexer.advance()
@@ -66,6 +95,10 @@ object AeroIndent {
         // A line that starts with a closer lines up with whatever opened it
         val first = blanksEnd(text, lineStart, lineEnd)
         if (first < lineEnd && text[first] in "})]" && stack.isNotEmpty()) return stack.last().lineIndent
+
+        pendingBase?.let { return it + unit }
+        val continues = lastType == AeroTokenTypes.COMMA || lastType == AeroTokenTypes.OPERATOR
+        bodyBase?.let { if (!continues && !lastWasOpener && stack.size == bodyDepth) return it }
 
         val top = stack.lastOrNull() ?: return lastLineIndent
         return when {
