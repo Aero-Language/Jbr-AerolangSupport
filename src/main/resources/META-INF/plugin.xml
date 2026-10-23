@@ -28,6 +28,9 @@
                   extensions="aero" />
         <platform.lsp.serverSupportProvider
                 implementation="com.aerolang.aerolangsupport.AeroLspServerSupportProvider" />
+        <lang.parserDefinition
+                language="Aero"
+                implementationClass="com.aerolang.aerolangsupport.AeroParserDefinition" />
         <lang.syntaxHighlighterFactory
                 language="Aero"
                 implementationClass="com.aerolang.aerolangsupport.highlighting.AeroSyntaxHighlighterFactory" />
