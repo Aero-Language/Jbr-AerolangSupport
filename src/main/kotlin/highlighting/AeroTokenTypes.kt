@@ -43,7 +43,7 @@ object AeroTokenTypes {
         "ref", "base",
         "module", "import", "from",
         "concurrent", "spawn",
-        "true", "false", "null", "self", "it",
+        "true", "false", "null", "self", "base", "it",
         "get", "set", "init",
         "is", "not", "and", "or"
     )
