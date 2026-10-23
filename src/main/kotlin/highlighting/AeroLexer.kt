@@ -12,7 +12,7 @@ class AeroLexer : LexerBase() {
     private var tokenEnd = 0
     private var tokenType: IElementType? = null
 
-    // 0 normal, 1 inside the text of a $"..." string, 2 inside a {expression} of one
+    // 0 normal, 1 inside the text of a $"..." string, 2 inside a {expression} of one, 3 inside a block comment, 4 inside a """ string
     private var mode = 0
     private var depth = 0
 
@@ -28,12 +28,12 @@ class AeroLexer : LexerBase() {
         this.buffer = buffer
         this.endOffset = endOffset
         currentOffset = startOffset
-        mode = if (initialState == 0) 0 else if (initialState == 1) 1 else 2
-        depth = if (initialState >= 2) initialState - 2 else 0
+        mode = initialState and 7
+        depth = initialState shr 3
         advance()
     }
 
-    override fun getState() = when (mode) { 0 -> 0; 1 -> 1; else -> 2 + depth }
+    override fun getState() = if (mode == 2) mode or (depth shl 3) else mode
     override fun getTokenType() = tokenType
     override fun getTokenStart() = tokenStart
     override fun getTokenEnd() = tokenEnd
@@ -73,17 +73,34 @@ class AeroLexer : LexerBase() {
             return true
         }
         if (match("/*")) {
-            while (peek() != null && !match("*/")) next()
-            tokenType = AeroTokenTypes.COMMENT
+            readBlockComment()
             return true
         }
         return false
     }
 
+    // Stays in mode 3 when the buffer ends before the closing */
+    private fun readBlockComment() {
+        mode = 3
+        while (peek() != null) {
+            if (match("*/")) { mode = 0; break }
+            next()
+        }
+        tokenType = AeroTokenTypes.COMMENT
+    }
+
+    private fun readTripleString() {
+        mode = 4
+        while (peek() != null) {
+            if (match("\"\"\"")) { mode = 0; break }
+            next()
+        }
+        tokenType = AeroTokenTypes.STRING
+    }
+
     private fun readString(quote: Char) {
         if (quote == '"' && match("\"\"\"")) {
-            while (peek() != null && !match("\"\"\"")) next()
-            tokenType = AeroTokenTypes.STRING
+            readTripleString()
             return
         }
 
@@ -195,6 +212,17 @@ class AeroLexer : LexerBase() {
         tokenStart = currentOffset
         val c = peek()!!
 
+        if (mode == 3) {
+            readBlockComment()
+            tokenEnd = currentOffset
+            return
+        }
+        if (mode == 4) {
+            readTripleString()
+            tokenEnd = currentOffset
+            return
+        }
+
         if (mode == 1) {
             if (c == '\n') mode = 0 // unterminated, fall back to normal lexing
             else {
@@ -207,7 +235,7 @@ class AeroLexer : LexerBase() {
         when {
             c.isWhitespace() -> {
                 readWhitespace()
-                if (mode != 0 && buffer.subSequence(tokenStart, currentOffset).contains('\n')) mode = 0
+                if ((mode == 1 || mode == 2) && buffer.subSequence(tokenStart, currentOffset).contains('\n')) mode = 0
             }
             c == '/' -> if (!readComment() && !readOperator()) single(AeroTokenTypes.BAD_CHARACTER)
             c == '"' || c == '\'' -> readString(c)
