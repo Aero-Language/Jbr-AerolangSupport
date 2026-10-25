@@ -38,7 +38,7 @@ object AeroTokenTypes {
         "class", "struct", "record", "trait", "enum", "annotation", "op",
         "extension", "extensions", "constructor", "destructor",
         "public", "internal", "protected", "private",
-        "static", "weak", "partial", "unsafe",
+        "static", "weak", "partial", "unsafe", "extern",
         "virtual", "abstract", "sealed", "impl",
         "ref", "base",
         "module", "import", "from",
