@@ -30,6 +30,9 @@ class AeroLspServerDescriptor(project: Project) : ProjectWideLspServerDescriptor
         return file.fileType == AeroFileType.Instance
     }
 
+    // The server's document selectors only match the language id "aero"
+    override fun getLanguageId(file: VirtualFile): String = "aero"
+
     override fun createCommandLine(): GeneralCommandLine {
         val lspExecutablePath = BinarySearcher.findLsp()
 
