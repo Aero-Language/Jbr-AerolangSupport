@@ -25,6 +25,7 @@
         <fileType name="Aero File"
                   implementationClass="com.aerolang.aerolangsupport.AeroFileType"
                   fieldName="Instance"
+                  language="Aero"
                   extensions="aero" />
         <platform.lsp.serverSupportProvider
                 implementation="com.aerolang.aerolangsupport.AeroLspServerSupportProvider" />
