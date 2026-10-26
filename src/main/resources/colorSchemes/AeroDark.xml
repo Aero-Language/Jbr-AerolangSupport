@@ -60,4 +60,14 @@
       <option name="FOREGROUND" value="e8d5a3"/>
     </value>
   </option>
+  <option name="AERO_FUNCTION">
+    <value>
+      <option name="FOREGROUND" value="7aa2f7"/>
+    </value>
+  </option>
+  <option name="AERO_TYPE">
+    <value>
+      <option name="FOREGROUND" value="2ac3de"/>
+    </value>
+  </option>
 </list>

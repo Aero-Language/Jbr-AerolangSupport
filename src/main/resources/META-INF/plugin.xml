@@ -57,6 +57,8 @@
                 implementation="com.aerolang.aerolangsupport.highlighting.AeroColorSettingsPage" />
         <additionalTextAttributes scheme="Default" file="colorSchemes/AeroLight.xml" />
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/AeroDark.xml" />
+        <additionalTextAttributes scheme="Dark" file="colorSchemes/AeroDark.xml" />
+        <additionalTextAttributes scheme="Light" file="colorSchemes/AeroLight.xml" />
     </extensions>
 
     <actions>
