@@ -185,10 +185,33 @@ class AeroLexer : LexerBase() {
             return
         }
 
-        // Followed by '(' (ignoring whitespace) means a call or declaration name
-        var look = currentOffset
-        while (look < endOffset && buffer[look].isWhitespace()) look++
+        // Followed by '(' or by generic arguments and '(' means a call or declaration name
+        var look = skipSpaces(currentOffset)
+        if (look < endOffset && buffer[look] == '<') look = skipSpaces(skipGenerics(look))
         tokenType = if (look < endOffset && buffer[look] == '(') AeroTokenTypes.FUNCTION else AeroTokenTypes.IDENTIFIER
+    }
+
+    private fun skipSpaces(from: Int): Int {
+        var i = from
+        while (i < endOffset && buffer[i].isWhitespace()) i++
+        return i
+    }
+
+    // Returns the offset after the matching '>', or the start if the angle brackets don't look like type arguments
+    private fun skipGenerics(start: Int): Int {
+        var depth = 0
+        var i = start
+        while (i < endOffset) {
+            val c = buffer[i]
+            when {
+                c == '<' -> depth++
+                c == '>' -> if (--depth == 0) return i + 1
+                c.isLetterOrDigit() || c == '_' || c == ',' || c == '.' || c == '?' || c == '[' || c == ']' || c == ':' || c == ' ' || c == '\t' -> {}
+                else -> return start
+            }
+            i++
+        }
+        return start
     }
 
     private fun readOperator(): Boolean {
